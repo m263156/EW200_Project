@@ -7,6 +7,9 @@ from enemy import *
 import random
 
 
+pygame.joystick.init()
+joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+print(joysticks)
 
 pygame.init()
 
@@ -36,26 +39,34 @@ class Camera(pygame.sprite.Group):
             offset_pos = sprite.rect.topleft - self.offset
             screen.blit(sprite.image, offset_pos)
 
+def spawn_enemies(LEVEL):
+    for i in range(LEVEL):
+        enemy = Enemy((random.randint(400, 2000), random.randint(400, 2000)), player)
+        all_sprites_group.add(enemy)
+        enemy_group.add(enemy)
 
 button_shoot = False
 camera = Camera()
-player = Player(button_shoot)
-for i in range(5):
-    enemy = Enemy((random.randint(400, 2000), random.randint(400, 2000)), player)
-    all_sprites_group.add(enemy)
-    enemy_group.add(enemy)
-
+player = Player()
 all_sprites_group.add(player)
 
 while True:
     keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
         if event.type == pygame.JOYBUTTONDOWN:
-            if pygame.joystick.Joystick(0).get_button(0):
-                player.button_shoot = True
+            if pygame.joystick.Joystick(0).get_button(5):
+                player.shoot = True
+                player.is_shooting()
+    if player.alive():
+        if not enemy_group:
+            LEVEL+= 1
+            spawn_enemies(LEVEL)
+
+
 
     screen.blit(background, (0, 0))
     camera.custom_draw()

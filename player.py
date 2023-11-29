@@ -107,6 +107,14 @@ class Player(pygame.sprite.Sprite):
         self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
         self.hitbox.center = self.pos
         self.rect.center = self.hitbox.center
+        if self.rect.left < 1000:
+            self.rect.left = 1000
+        if self.rect.right > 2930:
+            self.rect.right = 2930
+        if self.rect.top < 1010:
+            self.rect.top = 1010
+        if self.rect.bottom > 2870:
+            self.rect.bottom = 2870
 
     def update(self):
         self.user_input()

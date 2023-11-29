@@ -20,8 +20,18 @@ clock = pygame.time.Clock()
 
 # Loading images
 background = pygame.image.load("background/ground.png").convert()
-
-
+blue_tiles = pygame.image.load("background/blue_tile.png").convert()
+wall_left = pygame.image.load("background/wall_right.png").convert_alpha()
+wall_right = pygame.image.load("background/wall_right.png").convert_alpha()
+wall_top = pygame.transform.rotozoom(pygame.image.load("background/wall_right.png").convert_alpha(),
+                                               270, 1)
+wall_bottom = pygame.transform.rotozoom(pygame.image.load("background/wall_right.png").convert_alpha(),
+                                               90, 1)
+block_middle = pygame.transform.rotozoom(pygame.image.load("background/block_middle.png").convert_alpha(), 90, 2)
+block_top = pygame.transform.rotozoom(pygame.image.load("background/block_cap.png").convert_alpha(),
+                                               180, 2)
+block_bottom = pygame.transform.rotozoom(pygame.image.load("background/block_cap.png").convert_alpha(),
+                                               0, 2)
 class Camera(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
@@ -41,11 +51,26 @@ class Camera(pygame.sprite.Group):
 
 def spawn_enemies(LEVEL):
     for i in range(LEVEL):
-        enemy = Enemy((random.randint(400, 2000), random.randint(400, 2000)), player)
+        enemy = Enemy(locations[random.randint(0, 3)], player)
         all_sprites_group.add(enemy)
         enemy_group.add(enemy)
 
-button_shoot = False
+def draw_background():
+    background.fill(BACKGROUND_COLOR)
+    for i in range(30):
+        for j in range(30):
+            background.blit(blue_tiles, (1000 + TILE_SIZE * i, 1000 + TILE_SIZE * j))
+    for i in range(30):
+        background.blit(wall_left, (1000, 1000 + TILE_SIZE * i))
+        background.blit(wall_top, (1000 + TILE_SIZE * i, 1000))
+        background.blit(wall_right, (2920, 1000 + TILE_SIZE * i))
+        background.blit(wall_bottom, (1000 + TILE_SIZE * i, 2816))
+    background.blit(block_top, (1498, 1498))
+    for i in range(5):
+        background.blit(block_middle, (1500, 1628 + TILE_SIZE * 2 * i))
+    background.blit(block_bottom, (1499, 2269))
+    # block_rect = pygame.draw.rect()
+
 camera = Camera()
 player = Player()
 all_sprites_group.add(player)
@@ -67,7 +92,7 @@ while True:
             spawn_enemies(LEVEL)
 
 
-
+    draw_background()
     screen.blit(background, (0, 0))
     camera.custom_draw()
     all_sprites_group.update()

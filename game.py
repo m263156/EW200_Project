@@ -4,6 +4,7 @@ import math
 from settings import *
 from player import *
 from enemy import *
+import random
 
 
 
@@ -16,6 +17,7 @@ clock = pygame.time.Clock()
 
 # Loading images
 background = pygame.image.load("background/ground.png").convert()
+
 
 class Camera(pygame.sprite.Group):
     def __init__(self):
@@ -33,49 +35,17 @@ class Camera(pygame.sprite.Group):
         for sprite in all_sprites_group:
             offset_pos = sprite.rect.topleft - self.offset
             screen.blit(sprite.image, offset_pos)
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, position):
-        super().__init__(enemy_group, all_sprites_group)
-        self.image = pygame.image.load("sprites/zombie1.png").convert_alpha()
-        self.image = pygame.transform.rotozoom(self.image, 0, ENEMY_SIZE)
-
-        self.rect = self.image.get_rect()
-        self.rect.center = position
-
-        self.direction = pygame.math.Vector2()
-        self.velocity = pygame.math.Vector2()
-        self.speed = ENEMY_SPEED
-
-        self.position = pygame.math.Vector2(position)
-
-    def hunt_player(self):
-        player_vector = pygame.math.Vector2(player.hitbox.center)
-        enemy_vector = pygame.math.Vector2(self.rect.center)
-        distance = self.get_vector_distance(player_vector, enemy_vector)
-
-        if distance > 0:
-            self.direction = (player_vector - enemy_vector).normalize()
-        else:
-            self.direction = pygame.math.Vector2()
-
-        self.velocity = self.direction * self.speed
-        self.position += self.velocity
-
-        self.rect.centerx = self.position.x
-        self.rect.centery = self.position.y
-
-    def get_vector_distance(self, vector_1, vector_2):
-        return (vector_1 - vector_2).magnitude()
-
-    def update(self):
-        self.hunt_player()
 
 
-enemy = Enemy((400,400))
+button_shoot = False
 camera = Camera()
-player = Player()
+player = Player(button_shoot)
+for i in range(5):
+    enemy = Enemy((random.randint(400, 2000), random.randint(400, 2000)), player)
+    all_sprites_group.add(enemy)
+    enemy_group.add(enemy)
+
 all_sprites_group.add(player)
-all_sprites_group.add(enemy)
 
 while True:
     keys = pygame.key.get_pressed()
@@ -83,6 +53,9 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        if event.type == pygame.JOYBUTTONDOWN:
+            if pygame.joystick.Joystick(0).get_button(0):
+                player.button_shoot = True
 
     screen.blit(background, (0, 0))
     camera.custom_draw()

@@ -2,10 +2,13 @@ import pygame
 import math
 from settings import *
 
+pygame.joystick.init()
 
+def hitbox_collide(sprite1, sprite2):
+    return sprite1.base_zombie_rect.colliderect(sprite2.rect)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, button_shoot):
         super().__init__()
         self.velocity_x = None
         self.velocity_y = None
@@ -23,6 +26,8 @@ class Player(pygame.sprite.Sprite):
         self.shoot = False
         self.shoot_cooldown = 0
         self.gun_barrel_offset = pygame.math.Vector2(GUN_OFFSET_X, GUN_OFFSET_Y)
+        self.health = 100
+        self.button_shoot = button_shoot
 
     def player_rotation(self):
         self.mouse_coords = pygame.mouse.get_pos()
@@ -36,7 +41,8 @@ class Player(pygame.sprite.Sprite):
         self.velocity_x = 0
         self.velocity_y = 0
         pressed_keys = pygame.key.get_pressed()
-
+        joystick = pygame.joystick.Joystick(0).get_button(0)
+        print(joystick)
         if pressed_keys[pygame.K_w]:
             self.velocity_y = -self.speed
         if pressed_keys[pygame.K_s]:
@@ -50,7 +56,7 @@ class Player(pygame.sprite.Sprite):
             self.velocity_y /= math.sqrt(2)
             self.velocity_x /= math.sqrt(2)
 
-        if pygame.mouse.get_pressed() == (1,0,0) or pressed_keys[pygame.K_SPACE]:
+        if pygame.mouse.get_pressed() == (1,0,0) or pressed_keys[pygame.K_SPACE] or self.button_shoot == True:
             self.shoot = True
             self.is_shooting()
         else:
@@ -63,7 +69,6 @@ class Player(pygame.sprite.Sprite):
             self.bullet = Bullet(spawn_bullet_pos[0], spawn_bullet_pos[1], self.angle)
             bullet_group.add(self.bullet)
             all_sprites_group.add(self.bullet)
-
 
     def move(self):
         self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
@@ -104,5 +109,65 @@ class Bullet(pygame.sprite.Sprite):
         if pygame.time.get_ticks() - self.spawn_time > self.bullet_lifetime:
             self.kill()
 
+    def bullet_collision(self):
+        if pygame.sprite.groupcollide(enemy_group, bullet_group, True, True, hitbox_collide):
+            self.kill()
+
+
     def update(self):
         self.bullet_movement()
+        self.bullet_collision()
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, position, player):
+        super().__init__(enemy_group, all_sprites_group)
+        self.image = pygame.image.load("sprites/zombie1.png").convert_alpha()
+        self.image = pygame.transform.rotozoom(self.image, 0, ENEMY_SIZE)
+        self.player = player
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+
+        self.direction = pygame.math.Vector2()
+        self.velocity = pygame.math.Vector2()
+        self.speed = ENEMY_SPEED
+        self.base_zombie_rect = self.rect
+        self.base_zombie_rect.center = self.rect.center
+
+        self.position = pygame.math.Vector2(position)
+
+    def hunt_player(self):
+        player_vector = pygame.math.Vector2(self.player.hitbox.center)
+        enemy_vector = pygame.math.Vector2(self.rect.center)
+        distance = self.get_vector_distance(player_vector, enemy_vector)
+
+        if distance > 0:
+            self.direction = (player_vector - enemy_vector).normalize()
+        else:
+            self.direction = pygame.math.Vector2()
+
+        self.velocity = self.direction * self.speed
+        self.position += self.velocity
+
+        self.rect.centerx = self.position.x
+        self.rect.centery = self.position.y
+
+        self.base_zombie_rect.centerx = self.position.x
+        self.base_zombie_rect.centery = self.position.y
+
+    def get_vector_distance(self, vector_1, vector_2):
+        return (vector_1 - vector_2).magnitude()
+
+    def check_player_collision(self):
+        if pygame.Rect.colliderect(self.base_zombie_rect, self.player.hitbox): # player and enemy collides
+            self.kill()
+            self.player.kill()
+
+
+    def update(self):
+        if self.alive:
+            self.hunt_player()
+            self.check_player_collision()
+        else:
+            self.kill()
+            self.player.health -= 20
+

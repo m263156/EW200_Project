@@ -5,6 +5,8 @@ from settings import *
 
 def hitbox_collide(sprite1, sprite2):
     return sprite1.base_zombie_rect.colliderect(sprite2.rect)
+death_x = 0
+death_y = 0
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -26,6 +28,10 @@ class Player(pygame.sprite.Sprite):
         self.shoot_cooldown = 0
         self.gun_barrel_offset = pygame.math.Vector2(GUN_OFFSET_X, GUN_OFFSET_Y)
         self.health = 100
+        if [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]:
+            self.joystick_connected = True
+        else:
+            self.joystick_connected = False
 
     def player_rotation(self):
         self.mouse_coords = pygame.mouse.get_pos()
@@ -33,25 +39,27 @@ class Player(pygame.sprite.Sprite):
         self.y_change_mouse_player = (self.mouse_coords[1] - HEIGHT //2)
         self.angle = math.degrees(math.atan2(self.y_change_mouse_player, self.x_change_mouse_player))
 
-        self.aim_x = round(pygame.joystick.Joystick(0).get_axis(2))
-        self.aim_y = round(pygame.joystick.Joystick(0).get_axis(3))
 
-        if self.aim_y == 1 and self.aim_x == 0:
-            self.angle = 90
-        if self.aim_y == -1 and self.aim_x == 0:
-            self.angle = 270
-        if self.aim_y == 0 and self.aim_x == 1:
-            self.angle = 0
-        if self.aim_y == 0 and self.aim_x == -1:
-            self.angle = 180
-        if self.aim_y == 1 and self.aim_x == 1:
-            self.angle = 45
-        if self.aim_y == -1 and self.aim_x == 1:
-            self.angle = 315
-        if self.aim_y == 1 and self.aim_x == -1:
-            self.angle = 135
-        if self.aim_y == -1 and self.aim_x == -1:
-            self.angle = 225
+        if self.joystick_connected:
+            self.aim_x = round(pygame.joystick.Joystick(0).get_axis(2))
+            self.aim_y = round(pygame.joystick.Joystick(0).get_axis(3))
+
+            if self.aim_y == 1 and self.aim_x == 0:
+                self.angle = 90
+            if self.aim_y == -1 and self.aim_x == 0:
+                self.angle = 270
+            if self.aim_y == 0 and self.aim_x == 1:
+                self.angle = 0
+            if self.aim_y == 0 and self.aim_x == -1:
+                self.angle = 180
+            if self.aim_y == 1 and self.aim_x == 1:
+                self.angle = 45
+            if self.aim_y == -1 and self.aim_x == 1:
+                self.angle = 315
+            if self.aim_y == 1 and self.aim_x == -1:
+                self.angle = 135
+            if self.aim_y == -1 and self.aim_x == -1:
+                self.angle = 225
 
         self.image = pygame.transform.rotate(self.base_player_image, -self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
@@ -60,8 +68,10 @@ class Player(pygame.sprite.Sprite):
         self.velocity_x = 0
         self.velocity_y = 0
 
-        self.x_speed = round(pygame.joystick.Joystick(0).get_axis(0))
-        self.y_speed = round(pygame.joystick.Joystick(0).get_axis(1))
+        if self.joystick_connected:
+            self.x_speed = round(pygame.joystick.Joystick(0).get_axis(0))
+            self.y_speed = round(pygame.joystick.Joystick(0).get_axis(1))
+
         for event in pygame.event.get():
             if event.type == pygame.JOYBUTTONDOWN:
                 if pygame.joystick.Joystick(0).get_button(0):
@@ -85,9 +95,10 @@ class Player(pygame.sprite.Sprite):
             self.velocity_y /= math.sqrt(2)
             self.velocity_x /= math.sqrt(2)
 
-        if self.x_speed != 0 or self.y_speed != 0:
-            self.velocity_x = self.x_speed * PLAYER_SPEED
-            self.velocity_y = self.y_speed * PLAYER_SPEED
+        if self.joystick_connected:
+            if self.x_speed != 0 or self.y_speed != 0:
+                self.velocity_x = self.x_speed * PLAYER_SPEED
+                self.velocity_y = self.y_speed * PLAYER_SPEED
 
         if pygame.mouse.get_pressed() == (1,0,0) or pressed_keys[pygame.K_SPACE]:
             self.shoot = True
@@ -178,7 +189,7 @@ class Enemy(pygame.sprite.Sprite):
         self.position = pygame.math.Vector2(position)
 
     def hunt_player(self):
-        player_vector = pygame.math.Vector2(self.player.hitbox.center)
+        player_vector = pygame.math.Vector2(self.player.rect.center)
         enemy_vector = pygame.math.Vector2(self.rect.center)
         distance = self.get_vector_distance(player_vector, enemy_vector)
 
@@ -201,6 +212,8 @@ class Enemy(pygame.sprite.Sprite):
 
     def check_player_collision(self):
         if pygame.Rect.colliderect(self.base_zombie_rect, self.player.hitbox): # player and enemy collides
+            death_x = self.rect.centerx
+            death_y = self.rect.centery
             self.kill()
             self.player.kill()
 

@@ -9,7 +9,6 @@ import random
 
 pygame.joystick.init()
 joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-print(joysticks)
 
 pygame.init()
 
@@ -32,6 +31,16 @@ block_top = pygame.transform.rotozoom(pygame.image.load("background/block_cap.pn
                                                180, 2)
 block_bottom = pygame.transform.rotozoom(pygame.image.load("background/block_cap.png").convert_alpha(),
                                                0, 2)
+#Game Fonts
+title_font = pygame.font.Font("fonts/Kenney High.ttf", 128)
+end_font = pygame.font.Font("fonts/Kenney High.ttf", 450)
+small_font = pygame.font.Font("fonts/Kenney High.ttf", 32)
+title_text = title_font.render("Zombies!", True, (255, 69, 0))
+instructions_text = small_font.render("WASD to move, Point to aim, Click to shoot", True, (255, 69, 0))
+start_text = small_font.render("Press W to start game", True, (255, 69, 0))
+end_text = end_font.render("You died", True, (0, 0, 0))
+
+
 class Camera(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
@@ -51,7 +60,7 @@ class Camera(pygame.sprite.Group):
 
 def spawn_enemies(LEVEL):
     for i in range(LEVEL):
-        enemy = Enemy(locations[random.randint(0, 3)], player)
+        enemy = Enemy(locations[random.randint(0, 7)], player)
         all_sprites_group.add(enemy)
         enemy_group.add(enemy)
 
@@ -75,9 +84,22 @@ camera = Camera()
 player = Player()
 all_sprites_group.add(player)
 
-while True:
+background.fill((0, 0, 0))
+screen.blit(start_text,(WIDTH // 2.8, HEIGHT // 1.3))
+screen.blit(title_text,(WIDTH // 3.1, HEIGHT // 3))
+screen.blit(instructions_text,(WIDTH // 3.5, HEIGHT // 1.5))
+pygame.display.update()
+game_start = False
+while game_start == False:
     keys = pygame.key.get_pressed()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+        if keys[pygame.K_w]:
+            game_start = True
 
+while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -86,18 +108,18 @@ while True:
             if pygame.joystick.Joystick(0).get_button(5):
                 player.shoot = True
                 player.is_shooting()
-    if player.alive():
-        if not enemy_group:
-            LEVEL+= 1
-            spawn_enemies(LEVEL)
+        if player.alive():
+            draw_background()
+            if not enemy_group:
+                LEVEL += 1
+                spawn_enemies(LEVEL)
+            camera.custom_draw()
+            all_sprites_group.update()
+            pygame.display.update()
+            clock.tick(FPS)
+        else:
+            screen.fill((255, 69, 0))
+            screen.blit(end_text, (death_x, death_y))
+            pygame.display.update()
+            clock.tick(FPS)
 
-
-    draw_background()
-    screen.blit(background, (0, 0))
-    camera.custom_draw()
-    all_sprites_group.update()
-    #pygame.draw.rect(screen, "red", player.hitbox, width=2)
-    #pygame.draw.rect(screen, "yellow", player.rect, width=2)
-
-    pygame.display.update()
-    clock.tick(FPS)

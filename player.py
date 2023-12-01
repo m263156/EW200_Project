@@ -5,8 +5,9 @@ from settings import *
 
 def hitbox_collide(sprite1, sprite2):
     return sprite1.base_zombie_rect.colliderect(sprite2.rect)
-death_x = 0
-death_y = 0
+
+
+score = 0
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -160,6 +161,7 @@ class Bullet(pygame.sprite.Sprite):
 
         if pygame.time.get_ticks() - self.spawn_time > self.bullet_lifetime:
             self.kill()
+
 
     def bullet_collision(self):
         if pygame.sprite.groupcollide(enemy_group, bullet_group, True, True, hitbox_collide):

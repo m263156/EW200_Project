@@ -1,18 +1,19 @@
 import time
-
-import pygame
 from sys import exit
-import math
-from settings import *
 from player import *
-from enemy import *
 import random
-
+import pickle
 
 pygame.joystick.init()
 joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
 pygame.init()
+
+try:
+    with open('high_score.dat', 'rb') as file:
+        high_score = pickle.load(file)
+except:
+    high_score = 0
 
 # Creating the window
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -69,7 +70,7 @@ def spawn_enemies(LEVEL):
         locations = [(800, random.randint(800, 3300)), (3300, random.randint(800, 3300)),
                      (random.randint(800, 3300), 800), (random.randint(800, 3300), 3300)]
         enemy = Enemy(locations[random.randint(0, 3)], player)
-        enemy.speed = (LEVEL // 4) + 5
+        enemy.speed = (LEVEL // 4) + 3
         all_sprites_group.add(enemy)
         enemy_group.add(enemy)
 
@@ -88,54 +89,68 @@ def draw_background():
         background.blit(block_middle, (1500, 1628 + TILE_SIZE * 2 * i))
     background.blit(block_bottom, (1499, 2269))
     # block_rect = pygame.draw.rect()
+while True:
+    camera = Camera()
+    player = Player()
+    all_sprites_group.add(player)
 
-camera = Camera()
-player = Player()
-all_sprites_group.add(player)
+    background.fill((0, 0, 0))
+    screen.blit(start_text,(WIDTH // 2.8, HEIGHT // 1.3))
+    screen.blit(title_text,(WIDTH // 3.1, HEIGHT // 3))
+    screen.blit(instructions_text,(WIDTH // 3.5, HEIGHT // 1.5))
+    pygame.display.update()
+    game_start = False
+    while game_start == False:
+        keys = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+            if keys[pygame.K_SPACE]:
+                game_start = True
 
-background.fill((0, 0, 0))
-screen.blit(start_text,(WIDTH // 2.8, HEIGHT // 1.3))
-screen.blit(title_text,(WIDTH // 3.1, HEIGHT // 3))
-screen.blit(instructions_text,(WIDTH // 3.5, HEIGHT // 1.5))
-pygame.display.update()
-game_start = False
-while game_start == False:
-    keys = pygame.key.get_pressed()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-        if keys[pygame.K_SPACE]:
-            game_start = True
-
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-        if event.type == pygame.JOYBUTTONDOWN:
-            if pygame.joystick.Joystick(0).get_button(5):
-                player.shoot = True
-                player.is_shooting()
-    if player.alive():
-        draw_background()
-        if not enemy_group:
-            LEVEL += 1
-            level_screen = title_font.render(f"Level {LEVEL}", True, (255, 69, 0))
-            screen.fill((0, 0, 0))
-            screen.blit(level_screen, (WIDTH // 2, HEIGHT // 2))
+            if event.type == pygame.JOYBUTTONDOWN:
+                if pygame.joystick.Joystick(0).get_button(5):
+                    player.shoot = True
+                    player.is_shooting()
+        if player.alive():
+            draw_background()
+            if not enemy_group:
+                LEVEL += 1
+                level_screen = title_font.render(f"Level {LEVEL}", True, (255, 69, 0))
+                screen.fill((0, 0, 0))
+                screen.blit(level_screen, (WIDTH // 2, HEIGHT // 2))
+                pygame.display.update()
+                time.sleep(2)
+                spawn_enemies(LEVEL)
+            camera.custom_draw()
+            all_sprites_group.update()
+            level_text = points_font.render(f"Level: {LEVEL}", True, (255, 69, 0))
+            screen.blit(level_text, (WIDTH - 200, 0))
+            kills_text = points_font.render(f"Points: {len(kill_counter)}", True, (255, 69, 0))
+            screen.blit(kills_text, (WIDTH - 500, 0))
+            if len(kill_counter) > high_score:
+                high_score = len(kill_counter)
+            high_score_text = points_font.render(f"Highscore: {high_score}", True, (255, 69, 0))
+            screen.blit(high_score_text, (50, 0))
             pygame.display.update()
-            time.sleep(2)
-            spawn_enemies(LEVEL)
-        camera.custom_draw()
-        all_sprites_group.update()
-        level_text = points_font.render(f"Level: {LEVEL}", True, (255, 69, 0))
-        screen.blit(level_text, (WIDTH - 200, 0))
-        pygame.display.update()
-        clock.tick(FPS)
-    else:
-        screen.fill((255, 69, 0))
-        screen.blit(end_text, (death_x + 25, death_y + 150))
-        pygame.display.update()
-        clock.tick(FPS)
-
+            clock.tick(FPS)
+        else:
+            screen.fill((255, 69, 0))
+            screen.blit(end_text, (death_x + 25, death_y + 150))
+            kills_text = points_font.render(f"Points: {len(kill_counter)}", True, (0, 0, 0))
+            screen.blit(kills_text, (death_x + 25, death_y))
+            pygame.display.update()
+            clock.tick(FPS)
+            with open('high_score.dat', 'wb') as file:
+                pickle.dump(high_score, file)
+            keys = pygame.key.get_pressed()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()

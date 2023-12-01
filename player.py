@@ -2,12 +2,11 @@ import pygame
 import math
 from settings import *
 
-
 def hitbox_collide(sprite1, sprite2):
     return sprite1.base_zombie_rect.colliderect(sprite2.rect)
 
 
-score = 0
+kill_counter = []
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -150,7 +149,7 @@ class Bullet(pygame.sprite.Sprite):
         self.y_vel = math.sin(self.angle * (2*math.pi/360)) * self.speed
         self.bullet_lifetime = BULLET_LIFETIME
         self.spawn_time = pygame.time.get_ticks()
-
+        self.kills = 0
 
     def bullet_movement(self):
         self.x += self.x_vel
@@ -166,11 +165,12 @@ class Bullet(pygame.sprite.Sprite):
     def bullet_collision(self):
         if pygame.sprite.groupcollide(enemy_group, bullet_group, True, True, hitbox_collide):
             self.kill()
-
+            kill_counter.append(1)
 
     def update(self):
         self.bullet_movement()
         self.bullet_collision()
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, position, player):
